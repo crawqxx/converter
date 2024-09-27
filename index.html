@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pizdec converter</title>
+    <link rel="icon" href="https://w7.pngwing.com/pngs/717/988/png-transparent-emoji-emoticon-smiley-isolated-white-background-yellow-face-happy-funny-thumbnail.png" type="image/png">
+    <style>
+        :root {
+            --bg-color: hsl(210, 50%, 20%);
+            --bg-color-light: hsl(210, 50%, 35%);
+            --container-color: hsl(210, 50%, 25%);
+            --input-bg-color: hsl(210, 50%, 23%);
+            --btn-bg-color: hsl(210, 50%, 22%);
+            --text-color: white;
+        }
+        body {
+            background: linear-gradient(45deg, var(--bg-color), var(--bg-color-light));
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative; /* Position relative for settings button positioning */
+        }
+        .container {
+            text-align: center;
+            background-color: var(--container-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+            margin: auto; /* Centering the container */
+        }
+        textarea {
+            width: 300px;
+            height: 100px;
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            border: none;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        button {
+            background-color: var(--btn-bg-color);
+            color: var(--text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: hsl(210, 50%, 20%);
+        }
+        .output {
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+            min-height: 100px;
+            width: 300px;
+            word-wrap: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 0 auto; /* Centering the output container */
+        }
+        .settings-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 100; /* Ensure it appears above other elements */
+        }
+        .settings-btn img {
+            width: 30px;
+            height: 30px;
+            filter: invert(1); /* Invert color for the settings icon */
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background-color: var(--container-color);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .close-btn {
+            background-color: hsl(210, 50%, 40%);
+            color: var(--text-color);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        img {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            margin-left: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>pizdec converter</h1>
+        <textarea id="inputText" placeholder="enter text here..."></textarea><br>
+        <button onclick="convertToPizdec()">convert to pizdec</button>
+        <button onclick="convertBack()">convert back</button>
+        <img src="https://w7.pngwing.com/pngs/717/988/png-transparent-emoji-emoticon-smiley-isolated-white-background-yellow-face-happy-funny-thumbnail.png" alt="emoji icon"><br>
+        <div id="outputText" class="output">converted text will appear here...</div>
+        <button onclick="copyOutput()">copy</button>
+        <button onclick="clearOutput()">clear</button><br>
+        <button onclick="saveOutput()">save output as .txt</button><br><br>
+        <textarea id="symbolMapping" placeholder="paste your raw symbol mapping here..."></textarea><br>
+        <button onclick="loadMapping()">load custom mapping</button>
+        <button onclick="saveMapping()">save mapping as .txt</button>
+    </div>
+    <button class="settings-btn" onclick="toggleSettings()">
+        <img src="https://icons.veryicon.com/png/o/internet--web/truckhome/setting-11.png" alt="settings icon">
+    </button>
+    <div class="popup" id="settingsPopup">
+        <div class="popup-content">
+            <h3>Settings</h3>
+            <label for="bgColorPicker">Background Color:</label>
+            <select id="bgColorPicker">
+                <option value="hsl(210, 50%, 20%)">Dark Blue</option>
+                <option value="hsl(120, 50%, 20%)">Dark Green</option>
+                <option value="hsl(0, 50%, 20%)">Dark Red</option>
+                <option value="hsl(300, 50%, 20%)">Dark Purple</option>
+                <option value="hsl(180, 50%, 20%)">Teal</option>
+                <option value="hsl(45, 50%, 20%)">Dark Yellow</option>
+                <option value="hsl(240, 50%, 20%)">Dark Indigo</option>
+                <option value="hsl(50, 0%, 10%)">Black</option>
+            </select><br>
+            <button class="close-btn" onclick="closeSettings()">Close</button>
+        </div>
+    </div>
+    <script>
+        let charMap = {};
+        let reverseMap = {};
+        function toggleSettings() {
+            const popup = document.getElementById('settingsPopup');
+            popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
+        }
+        function closeSettings() {
+            document.getElementById('settingsPopup').style.display = 'none';
+        }
+        document.getElementById('bgColorPicker').addEventListener('change', function () {
+            const bgColor = this.value;
+            document.documentElement.style.setProperty('--bg-color', bgColor);
+            document.documentElement.style.setProperty('--bg-color-light', bgColor.replace(/20%/, '35%'));
+            document.documentElement.style.setProperty('--container-color', bgColor.replace(/20%/, '25%'));
+            const buttonColor = bgColor.replace(/20%/, '22%'); // Darker than container
+            const inputColor = bgColor.replace(/20%/, '23%'); // Slightly brighter than container
+            const outputColor = inputColor;
+            const textColor = bgColor.includes('0%') ? 'white' : 'black';
+            
+            document.querySelectorAll('button').forEach(btn => {
+                btn.style.backgroundColor = buttonColor; // Set button color
+                btn.style.color = textColor;
+            });
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.style.backgroundColor = inputColor; // Set textarea color
+                textarea.style.color = textColor;
+            });
+            document.querySelector('.output').style.backgroundColor = outputColor;
+            document.querySelector('.output').style.color = textColor;
+        });
+        function loadMapping() {
+            const rawMapping = document.getElementById('symbolMapping').value.trim();
+            const lines = rawMapping.split('\n');
+            charMap = {};
+            reverseMap = {};
+            let symbolCheck = {};
+            lines.forEach(line => {
+                const [char, variants] = line.split(' - ');
+                if (char && variants) {
+                    const symbolVariants = variants.split(',').map(v => v.trim());
+                    charMap[char] = symbolVariants;
+                    symbolVariants.forEach(v => {
+                        reverseMap[v] = char;
+                        symbolCheck[v] = true; // Track valid symbols
+                    });
+                }
+            });
+            alert('Custom mapping loaded!');
+        }
+        function convertToPizdec() {
+            const inputText = document.getElementById('inputText').value;
+            let outputText = '';
+            for (let char of inputText) {
+                if (charMap[char]) {
+                    outputText += charMap[char][Math.floor(Math.random() * charMap[char].length)];
+                } else {
+                    outputText += char;
+                }
+            }
+            document.getElementById('outputText').innerText = outputText;
+        }
+        function convertBack() {
+            const inputText = document.getElementById('outputText').innerText;
+            let outputText = '';
+            for (let char of inputText) {
+                if (reverseMap[char]) {
+                    outputText += reverseMap[char];
+                } else {
+                    outputText += char;
+                }
+            }
+            document.getElementById('outputText').innerText = outputText;
+        }
+        function copyOutput() {
+            const outputText = document.getElementById('outputText').innerText;
+            navigator.clipboard.writeText(outputText).then(() => {
+                alert('Output copied to clipboard!');
+            });
+        }
+        function clearOutput() {
+            document.getElementById('outputText').innerText = 'converted text will appear here...';
+        }
+        function saveOutput() {
+            const outputText = document.getElementById('outputText').innerText;
+            const blob = new Blob([outputText], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'output.txt';
+            link.click();
+        }
+        function saveMapping() {
+            const mappingLines = Object.keys(charMap).map(char => {
+                return `${char} - ${charMap[char].join(', ')}`;
+            });
+            const blob = new Blob([mappingLines.join('\n')], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'mapping.txt';
+            link.click();
+        }
+    </script>
+</body>
+</html>
